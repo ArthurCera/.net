@@ -11,11 +11,14 @@ using System.Web.UI.WebControls;
 
 public partial class artistDetails : MultitracksPage
 {
+    #region Classes and variables
+    //settings some variables to get the DT from the DS
     private int artistID = 1;
     private DataTable artistDT = new DataTable();
     private DataTable albumsDT = new DataTable();
     private DataTable songsDT = new DataTable();
 
+    //Some classes and Lists to easily manipulete the data
     public Artist artist;
     public List<Album> albums;
     public List<Song> songs;
@@ -55,7 +58,31 @@ public partial class artistDetails : MultitracksPage
         public bool proPresenter { get; set; }
 
     }
+    #endregion
 
+    #region functions
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        //if we don't get any id from the query we set one ourselves
+        if (Request.QueryString["artistID"] != null)
+        {
+            artistID = Int32.TryParse(Request.QueryString["artistID"], out int result) ? Int32.Parse(Request.QueryString["artistID"]) : 1;
+        }
+
+        var sql = new SQL();
+
+        try
+        {
+            sql.Parameters.Add("@artistID", artistID);
+            var data = sql.ExecuteStoredProcedureDS("GetArtistDetails");
+
+            LoadValuesAsync(data);
+        }
+        catch (Exception ex)
+        {
+            throw ex.InnerException;
+        }
+    }
     //function to load the values inside the necessary variables
     protected async Task LoadValuesAsync(DataSet data)
     {
@@ -153,6 +180,9 @@ public partial class artistDetails : MultitracksPage
             Response.Redirect("/artistDetails.aspx?artistID=1");
         }
     }
+    //processing the biography
+    //adding a <a> tag to the <!-- Read More --> part and separating the text into paragraphs
+    //the <a> is used to show the rest of the text.
     private string ProcessBiography(string biography)
     {
         try {
@@ -186,24 +216,5 @@ public partial class artistDetails : MultitracksPage
             return biography;
         }
     }
-    protected void Page_Load(object sender, EventArgs e)
-    {
-        if (Request.QueryString["artistID"] != null)
-        {
-            artistID = Int32.TryParse(Request.QueryString["artistID"], out int result) ? Int32.Parse(Request.QueryString["artistID"]) : 1;
-        }
-
-        var sql = new SQL();
-
-        try
-        {
-            sql.Parameters.Add("@artistID", artistID);
-            var data = sql.ExecuteStoredProcedureDS("GetArtistDetails");
-
-            LoadValuesAsync(data);            
-        }
-        catch (Exception ex) {
-            throw ex.InnerException;
-        }
-    }
+    #endregion
 }
